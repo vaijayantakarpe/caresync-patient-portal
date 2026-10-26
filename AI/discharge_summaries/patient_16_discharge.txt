@@ -1,0 +1,21 @@
+========================================
+        HOSPITAL DISCHARGE SUMMARY
+========================================
+
+Patient ID       : N/A
+Patient Name     : N/A
+Age              : N/A
+Gender           : Female
+
+Symptoms         : N/A
+
+Blood Pressure   : N/A
+Sugar Level      : N/A
+Temperature      : N/A
+
+Status           : Discharged
+Discharge Time   : 2026-10-01 13:50:41
+
+----------------------------------------
+Patient has been discharged successfully.
+----------------------------------------

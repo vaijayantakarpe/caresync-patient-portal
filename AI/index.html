@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a237e">
+    <title>CareSync Patient Portal</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a237e'/%3E%3Cpath d='M32 12v40M12 32h40' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E">
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background-color: #f5f7fb;
+            color: #222;
+        }
+
+        h1 { color: #1a237e; margin-bottom: 30px; }
+        h2 { color: #283593; margin-top: 35px; }
+
+        .section {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.08);
+        }
+
+        label { font-weight: bold; display: inline-block; margin: 8px 5px 8px 0; }
+
+        select, button {
+            padding: 10px 15px;
+            margin: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        select {
+            border: 1px solid #ccc;
+            background: white;
+            min-width: 300px;
+            max-width: 100%;
+        }
+
+        button {
+            background: #1a237e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover { background: #283593; }
+        button:disabled { background: #999; cursor: not-allowed; }
+
+        .result-box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+            background: #fafafa;
+            min-height: 50px;
+        }
+
+        .loading { color: #555; font-style: italic; }
+        .success {
+            background: #e8f5e9;
+            border-left: 5px solid #2e7d32;
+            color: #1b5e20;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 5px solid #ef6c00;
+            color: #e65100;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .error {
+            background: #ffebee;
+            border-left: 5px solid #c62828;
+            color: #b71c1c;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .info {
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        /* AI TRIAGE */
+        .triage-result-box {
+            background: #f8f9ff;
+            border-left: 5px solid #1a237e;
+            padding: 20px;
+            border-radius: 6px;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        .triage-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a237e;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+        }
+        .triage-section {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+        .triage-section-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #283593;
+            margin-bottom: 8px;
+        }
+        .triage-section-content {
+            color: #333;
+            line-height: 1.7;
+            white-space: pre-line;
+        }
+        .triage-note {
+            background: #fff8e1;
+            border-left: 4px solid #ff9800;
+            padding: 12px;
+            border-radius: 5px;
+            color: #6d4c00;
+            margin-top: 10px;
+        }
+        .triage-list { margin: 8px 0 0 20px; padding: 0; }
+        .triage-list li { margin-bottom: 5px; }
+
+        /* AI AGENT */
+        .agent-badge {
+            display: inline-block;
+            background: #ff6f00;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .agent-result {
+            background: #fff8e1;
+            border-left: 4px solid #ff6f00;
+            padding: 18px;
+            border-radius: 6px;
+            line-height: 1.7;
+        }
+        .agent-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a237e;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #ddd;
+        }
+        .agent-section {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .agent-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #283593;
+            margin-bottom: 10px;
+        }
+        .agent-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .agent-row:last-child { border-bottom: none; }
+        .agent-label { color: #555; }
+        .agent-value { color: #222; font-weight: bold; text-align: right; }
+        .agent-success {
+            background: #e8f5e9;
+            border-left: 5px solid #2e7d32;
+            color: #1b5e20;
+            padding: 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .agent-warning {
+            background: #fff3e0;
+            border-left: 5px solid #ef6c00;
+            color: #e65100;
+            padding: 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* DISCHARGE */
+        .discharge-summary {
+            width: 100%;
+            max-width: 620px;
+            margin: 12px auto 0;
+            background: #fff;
+            border: 1px solid #cfd5dc;
+            border-radius: 5px;
+            padding: 14px 16px;
+            color: #222;
+        }
+        .bill-header {
+            text-align: center;
+            padding-bottom: 9px;
+            margin-bottom: 9px;
+            border-bottom: 1px dashed #9aa3ad;
+        }
+        .bill-hospital-name { font-size: 16px; font-weight: 700; color: #1a237e; margin-bottom: 2px; }
+        .bill-title { font-size: 11px; font-weight: 700; color: #555; letter-spacing: .9px; }
+        .bill-ref { margin-top: 4px; font-size: 10px; color: #777; }
+        .bill-patient {
+            display: grid;
+            grid-template-columns: 1.6fr .7fr .8fr .8fr;
+            gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        .bill-label { display: block; font-size: 9px; color: #7b858e; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+        .bill-value { display: block; font-size: 12px; color: #222; font-weight: 600; word-break: break-word; }
+        .bill-section { margin-top: 9px; }
+        .bill-section-title { padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px solid #dfe3e7; color: #68737d; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+        .bill-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 4px 0; border-bottom: 1px dotted #e2e5e8; font-size: 11px; }
+        .bill-row:last-child { border-bottom: none; }
+        .bill-row-label { color: #666; }
+        .bill-row-value { color: #222; font-weight: 600; text-align: right; max-width: 320px; word-break: break-word; }
+        .bill-status { display: inline-block; padding: 2px 7px; border-radius: 10px; background: #edf8ee; border: 1px solid #9ccc9f; color: #2e7d32; font-size: 9px; font-weight: 700; }
+        .bill-confirmation { margin-top: 9px; padding-top: 8px; border-top: 1px dashed #9aa3ad; text-align: center; font-size: 10px; color: #2e7d32; font-weight: 600; }
+        .bill-footer { margin-top: 4px; text-align: center; color: #999; font-size: 9px; }
+
+        @media (max-width: 600px) {
+            body { margin: 20px auto; padding: 0 12px; }
+            select, button { width: 100%; min-width: 0; margin: 6px 0; }
+            .section { padding: 18px; }
+            .agent-row { flex-direction: column; align-items: flex-start; gap: 3px; }
+            .agent-value { text-align: left; }
+            .bill-patient { grid-template-columns: 1fr 1fr; }
+            .bill-patient .bill-cell:first-child { grid-column: 1 / -1; }
+            .discharge-summary { padding: 11px 12px; }
+            .bill-row-value { max-width: 190px; }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🏥 CareSync Patient Portal</h1>
+
+    <div class="section">
+        <h2>Patient Triage</h2>
+        <p class="info">Select a patient and run the AI triage system to analyze the patient's available information.</p>
+
+        <label for="patient-select">Select Patient:</label>
+        <select id="patient-select">
+            <option value="">-- Loading patients... --</option>
+        </select>
+
+        <button id="triage-button" onclick="runTriage()">Run AI Triage</button>
+
+        <div class="result-box" id="triage-result">Triage result will appear here.</div>
+    </div>
+
+    <div class="section">
+        <h2>Bed Availability - AI Agent</h2>
+        <p class="info">Select a patient and ward. The AI Agent will find an available bed and assign it to the patient.</p>
+
+        <label for="agent-patient-select">Patient:</label>
+        <select id="agent-patient-select">
+            <option value="">-- Select patient --</option>
+        </select>
+
+        <label for="ward-select">Ward:</label>
+        <select id="ward-select">
+            <option value="General">General</option>
+            <option value="Emergency">Emergency</option>
+            <option value="ICU">ICU</option>
+            <option value="Pediatric">Pediatric</option>
+            <option value="Maternity">Maternity</option>
+        </select>
+
+        <button id="agent-button" onclick="runBedAgent()">Assign Bed with AI Agent</button>
+
+        <div class="result-box" id="agent-result">Agent result will appear here after you click the button.</div>
+    </div>
+
+    <div class="section">
+        <h2>Patient Discharge</h2>
+        <p class="info">Select a patient and generate their discharge summary. Patients who are already discharged cannot be discharged again.</p>
+
+        <label for="discharge-patient-select">Patient:</label>
+        <select id="discharge-patient-select">
+            <option value="">-- Select patient --</option>
+        </select>
+
+        <button id="discharge-button" onclick="dischargePatient()">Discharge Patient</button>
+
+        <div class="result-box" id="discharge-result">Discharge result will appear here.</div>
+    </div>
+
+    <script>
+        const patientSelect = document.getElementById("patient-select");
+        const agentPatientSelect = document.getElementById("agent-patient-select");
+        const dischargePatientSelect = document.getElementById("discharge-patient-select");
+
+        let patients = [];
+
+        function escapeHtml(value) {
+            const div = document.createElement("div");
+            div.textContent = String(value ?? "");
+            return div.innerHTML;
+        }
+
+        function patientLabel(patient) {
+            const id = patient.patient_id;
+            const name = patient.full_name || "Unnamed patient";
+            const status = patient.status || "Not Assigned";
+            const bed = patient.bed_number ? ` - Bed ${patient.bed_number}` : "";
+            return `${id} - ${name} (${status}${bed})`;
+        }
+
+        function getPatient(patientId) {
+            return patients.find(p => Number(p.patient_id) === Number(patientId));
+        }
+
+        async function loadPatients() {
+            patientSelect.innerHTML = "<option value=\"\">-- Loading patients... --</option>";
+            agentPatientSelect.innerHTML = "<option value=\"\">-- Loading patients... --</option>";
+            dischargePatientSelect.innerHTML = "<option value=\"\">-- Loading patients... --</option>";
+
+            try {
+                const response = await fetch("/patients", { headers: { "Accept": "application/json" } });
+                if (!response.ok) throw new Error("Unable to load patients.");
+
+                patients = await response.json();
+
+                patientSelect.innerHTML = "";
+                agentPatientSelect.innerHTML = "";
+                dischargePatientSelect.innerHTML = "";
+
+                patientSelect.add(new Option("-- Select patient --", ""));
+                agentPatientSelect.add(new Option("-- Select patient --", ""));
+                dischargePatientSelect.add(new Option("-- Select patient --", ""));
+
+                patients.forEach(patient => {
+                    const label = patientLabel(patient);
+                    patientSelect.add(new Option(label, patient.patient_id));
+                    agentPatientSelect.add(new Option(label, patient.patient_id));
+                    dischargePatientSelect.add(new Option(label, patient.patient_id));
+                });
+            } catch (error) {
+                const message = escapeHtml(error.message);
+                patientSelect.innerHTML = `<option value="">${message}</option>`;
+                agentPatientSelect.innerHTML = `<option value="">${message}</option>`;
+                dischargePatientSelect.innerHTML = `<option value="">${message}</option>`;
+            }
+        }
+
+        function formatTriageContent(value) {
+            const lines = String(value || "")
+                .split(/\n+/)
+                .map(line => line.trim())
+                .filter(Boolean);
+
+            if (!lines.length) return "Not provided";
+
+            const listItems = [];
+            const normalLines = [];
+
+            lines.forEach(line => {
+                const match = line.match(/^(?:[•*-]|\d+[.)])\s+(.*)$/);
+                if (match) listItems.push(match[1]);
+                else normalLines.push(line);
+            });
+
+            let html = normalLines.length ? escapeHtml(normalLines.join("\n")) : "";
+
+            if (listItems.length) {
+                if (html) html += "<br><br>";
+                html += `<ul class="triage-list">${listItems.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+            }
+
+            return html || "Not provided";
+        }
+
+        function formatTriageResult(result) {
+            const normalized = String(result || "")
+                .replace(/\*\*/g, "")
+                .replace(/\r\n/g, "\n")
+                .replace(/\r/g, "\n")
+                .trim();
+
+            const categoryMatch = normalized.match(/1\.\s*Triage Category:\s*(.*?)(?=\n?\s*2\.\s*Reason:|$)/is);
+            const reasonMatch = normalized.match(/2\.\s*Reason:\s*(.*?)(?=\n?\s*3\.\s*Recommended Action:|$)/is);
+            const actionMatch = normalized.match(/3\.\s*Recommended Action:\s*(.*?)(?=\n?\s*4\.\s*Recommended Doctor\/Specialty:|$)/is);
+            const doctorMatch = normalized.match(/4\.\s*Recommended Doctor\/Specialty:\s*(.*?)(?=\n?\s*(?:Note:|Notes:|5\.)|$)/is);
+            const noteMatch = normalized.match(/(?:Note|Notes):\s*(.*?)$/is);
+
+            const category = categoryMatch ? categoryMatch[1].trim() : "Not provided";
+            const reason = reasonMatch ? reasonMatch[1].trim() : "Not provided";
+            const action = actionMatch ? actionMatch[1].trim() : "Not provided";
+            const doctor = doctorMatch ? doctorMatch[1].trim() : "Not provided";
+            const note = noteMatch ? noteMatch[1].trim() : "";
+
+            return `
+                <div class="triage-result-box">
+                    <div class="triage-title">🩺 AI TRIAGE RESULT</div>
+                    <div class="triage-section">
+                        <div class="triage-section-title">1. TRIAGE CATEGORY</div>
+                        <div class="triage-section-content">${escapeHtml(category)}</div>
+                    </div>
+                    <div class="triage-section">
+                        <div class="triage-section-title">2. REASON</div>
+                        <div class="triage-section-content">${escapeHtml(reason)}</div>
+                    </div>
+                    <div class="triage-section">
+                        <div class="triage-section-title">3. RECOMMENDED ACTION</div>
+                        <div class="triage-section-content">${formatTriageContent(action)}</div>
+                    </div>
+                    <div class="triage-section">
+                        <div class="triage-section-title">4. RECOMMENDED DOCTOR / SPECIALTY</div>
+                        <div class="triage-section-content">${escapeHtml(doctor)}</div>
+                    </div>
+                    ${note ? `<div class="triage-note"><strong>ℹ️ NOTE</strong><br><br>${escapeHtml(note)}</div>` : ""}
+                </div>
+            `;
+        }
+
+        async function runTriage() {
+            const patientId = patientSelect.value;
+            const resultDiv = document.getElementById("triage-result");
+            const button = document.getElementById("triage-button");
+
+            if (!patientId) {
+                resultDiv.className = "result-box warning";
+                resultDiv.textContent = "Please select a patient first.";
+                return;
+            }
+
+            resultDiv.className = "result-box loading";
+            resultDiv.textContent = "Running AI triage, please wait...";
+            button.disabled = true;
+
+            try {
+                const response = await fetch(`/triage/${patientId}`, { method: "POST" });
+                const data = await response.json();
+
+                if (!response.ok || !data.result) {
+                    throw new Error(data.detail || "Triage could not be completed.");
+                }
+
+                resultDiv.className = "result-box";
+                resultDiv.innerHTML = formatTriageResult(data.result);
+            } catch (error) {
+                resultDiv.className = "result-box error";
+                resultDiv.textContent = "Triage Error: " + error.message;
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function formatAgentResult(result) {
+            const ward = result.ward || document.getElementById("ward-select").value || "Not provided";
+            const bedNumber = result.bed_number || "Not available";
+            const bedId = result.bed_id ?? "Not available";
+            const nurse = result.nurse || "Not available";
+            const patientId = result.patient_id ?? "Not available";
+            const patientName = result.patient_name || getPatient(patientId)?.full_name || "Not available";
+            const alreadyAssigned = Boolean(result.already_assigned);
+
+            return `
+                <span class="agent-badge">DATA FROM AI AGENT</span>
+                <div class="agent-result">
+                    <div class="agent-title">${alreadyAssigned ? "ℹ️ PATIENT ALREADY ASSIGNED" : "✅ BED ASSIGNMENT COMPLETED"}</div>
+
+                    <div class="agent-section">
+                        <div class="agent-section-title">🏥 WARD & BED</div>
+                        <div class="agent-row"><span class="agent-label">Ward</span><span class="agent-value">${escapeHtml(ward)}</span></div>
+                        <div class="agent-row"><span class="agent-label">Bed</span><span class="agent-value">${escapeHtml(bedNumber)}</span></div>
+                        <div class="agent-row"><span class="agent-label">Bed ID</span><span class="agent-value">${escapeHtml(bedId)}</span></div>
+                    </div>
+
+                    <div class="agent-section">
+                        <div class="agent-section-title">👩‍⚕️ ON-DUTY NURSE</div>
+                        <div class="agent-row"><span class="agent-label">Nurse</span><span class="agent-value">${escapeHtml(nurse)}</span></div>
+                        <div class="agent-row"><span class="agent-label">Ward</span><span class="agent-value">${escapeHtml(ward)}</span></div>
+                    </div>
+
+                    <div class="agent-section">
+                        <div class="agent-section-title">🛏️ PATIENT ASSIGNMENT</div>
+                        <div class="agent-row"><span class="agent-label">Patient ID</span><span class="agent-value">${escapeHtml(patientId)}</span></div>
+                        <div class="agent-row"><span class="agent-label">Patient</span><span class="agent-value">${escapeHtml(patientName)}</span></div>
+                        <div class="agent-row"><span class="agent-label">Bed</span><span class="agent-value">${escapeHtml(bedNumber)}</span></div>
+                    </div>
+
+                    <div class="${alreadyAssigned ? "agent-warning" : "agent-success"}">
+                        ${alreadyAssigned ? "ℹ️ This patient already has an active bed assignment. No duplicate assignment was created." : "✅ Assignment completed successfully."}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function runBedAgent() {
+            const patientId = agentPatientSelect.value;
+            const ward = document.getElementById("ward-select").value;
+            const resultDiv = document.getElementById("agent-result");
+            const button = document.getElementById("agent-button");
+
+            if (!patientId) {
+                resultDiv.className = "result-box warning";
+                resultDiv.textContent = "Please select a patient first.";
+                return;
+            }
+
+            const patient = getPatient(patientId);
+
+            // Do not even send a second assignment request when the UI already
+            // knows the patient has an active bed.
+            if (patient && patient.bed_id) {
+                resultDiv.className = "result-box";
+                resultDiv.innerHTML = formatAgentResult({
+                    success: true,
+                    already_assigned: true,
+                    patient_id: patient.patient_id,
+                    patient_name: patient.full_name,
+                    ward: patient.ward || ward,
+                    bed_id: patient.bed_id,
+                    bed_number: patient.bed_number,
+                    nurse: patient.nurse_name
+                });
+                return;
+            }
+
+            resultDiv.className = "result-box loading";
+            resultDiv.innerHTML = "AI Agent is running...<br>This may take a few seconds.";
+            button.disabled = true;
+
+            try {
+                const response = await fetch("/agent/assign_bed", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                    body: JSON.stringify({ patient_id: Number(patientId), ward })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || data.message || "Bed assignment failed.");
+                }
+
+                const result = data.result || data;
+                resultDiv.className = "result-box";
+                resultDiv.innerHTML = formatAgentResult(result);
+
+                await loadPatients();
+            } catch (error) {
+                resultDiv.className = "result-box error";
+                resultDiv.textContent = "Bed Assignment: " + error.message;
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function formatDischargeSummary(summary) {
+            const text = String(summary || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+
+            function getValue(label) {
+                const regex = new RegExp("^" + label.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&") + "\\s*:\\s*(.*?)$", "im");
+                const match = text.match(regex);
+                return match ? match[1].trim() : "Not provided";
+            }
+
+            const patientId = getValue("Patient ID");
+            const patientName = getValue("Patient Name");
+            const dob = getValue("Date of Birth");
+            const gender = getValue("Gender");
+            const bloodGroup = getValue("Blood Group");
+            const phone = getValue("Phone");
+            const email = getValue("Email");
+            const ward = getValue("Ward");
+            const bedNumber = getValue("Bed Number");
+            const nurse = getValue("Nurse");
+            const status = getValue("Status");
+            const dischargeTime = getValue("Discharge Time");
+
+            return `
+                <div class="discharge-summary">
+                    <div class="bill-header">
+                        <div class="bill-hospital-name">CARESYNC PATIENT PORTAL</div>
+                        <div class="bill-title">DISCHARGE SUMMARY</div>
+                        <div class="bill-ref">Patient ID: ${escapeHtml(patientId)}</div>
+                    </div>
+
+                    <div class="bill-patient">
+                        <div class="bill-cell"><span class="bill-label">Patient</span><span class="bill-value">${escapeHtml(patientName)}</span></div>
+                        <div class="bill-cell"><span class="bill-label">Gender</span><span class="bill-value">${escapeHtml(gender)}</span></div>
+                        <div class="bill-cell"><span class="bill-label">Blood Group</span><span class="bill-value">${escapeHtml(bloodGroup)}</span></div>
+                        <div class="bill-cell"><span class="bill-label">DOB</span><span class="bill-value">${escapeHtml(dob)}</span></div>
+                    </div>
+
+                    <div class="bill-section">
+                        <div class="bill-section-title">Patient Details</div>
+                        <div class="bill-row"><span class="bill-row-label">Phone</span><span class="bill-row-value">${escapeHtml(phone)}</span></div>
+                        <div class="bill-row"><span class="bill-row-label">Email</span><span class="bill-row-value">${escapeHtml(email)}</span></div>
+                    </div>
+
+                    <div class="bill-section">
+                        <div class="bill-section-title">Hospital Stay</div>
+                        <div class="bill-row"><span class="bill-row-label">Ward</span><span class="bill-row-value">${escapeHtml(ward)}</span></div>
+                        <div class="bill-row"><span class="bill-row-label">Bed</span><span class="bill-row-value">${escapeHtml(bedNumber)}</span></div>
+                        <div class="bill-row"><span class="bill-row-label">Nurse</span><span class="bill-row-value">${escapeHtml(nurse)}</span></div>
+                        <div class="bill-row"><span class="bill-row-label">Status</span><span class="bill-row-value"><span class="bill-status">${escapeHtml(status)}</span></span></div>
+                        <div class="bill-row"><span class="bill-row-label">Discharge Time</span><span class="bill-row-value">${escapeHtml(dischargeTime)}</span></div>
+                    </div>
+
+                    <div class="bill-confirmation">✓ Patient discharge has been recorded successfully.</div>
+                    <div class="bill-footer">CareSync Patient Portal</div>
+                </div>
+            `;
+        }
+
+        async function dischargePatient() {
+            const patientId = dischargePatientSelect.value;
+            const resultDiv = document.getElementById("discharge-result");
+            const button = document.getElementById("discharge-button");
+
+            if (!patientId) {
+                resultDiv.className = "result-box warning";
+                resultDiv.textContent = "Please select a patient first.";
+                return;
+            }
+
+            const patient = getPatient(patientId);
+
+            if (patient && patient.status === "Discharged") {
+                resultDiv.className = "result-box warning";
+                resultDiv.textContent = "This patient has already been discharged.";
+                return;
+            }
+
+            resultDiv.className = "result-box loading";
+            resultDiv.textContent = "Generating discharge summary, please wait...";
+            button.disabled = true;
+
+            try {
+                const response = await fetch(`/patients/${patientId}/discharge`, {
+                    method: "POST",
+                    headers: { "Accept": "application/json" }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || data.message || "Discharge failed.");
+                }
+
+                resultDiv.className = "result-box";
+                resultDiv.innerHTML = formatDischargeSummary(data.summary || "");
+
+                await loadPatients();
+            } catch (error) {
+                resultDiv.className = "result-box error";
+                resultDiv.textContent = "Discharge Error: " + error.message;
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", loadPatients);
+    </script>
+</body>
+</html>

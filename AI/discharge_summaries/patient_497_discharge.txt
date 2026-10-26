@@ -1,0 +1,18 @@
+========================================
+       HOSPITAL DISCHARGE SUMMARY
+========================================
+
+Patient ID       : 497
+Patient Name     : Yagnesh Manda
+Date of Birth    : 1949-10-23
+Gender           : Female
+Blood Group      : O-
+Phone            : 9100449581
+Email            : patient497@example.com
+
+Status           : DISCHARGED
+Discharge Time   : 2026-10-01 15:11:14
+
+----------------------------------------
+Patient has been discharged successfully.
+----------------------------------------

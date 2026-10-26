@@ -2,10 +2,10 @@
 # main.py
 # CareSync Pro Dashboard Backend
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
 import mysql.connector
-
 
 # ============================================================
 # FASTAPI APPLICATION
@@ -21,7 +21,7 @@ app = FastAPI(title="CareSync Pro Dashboard API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -30,19 +30,26 @@ app.add_middleware(
 # DATABASE CONNECTION
 # ============================================================
 
+
 def get_db():
+    db_password = os.getenv("DB_PASSWORD")
+    if not db_password:
+        raise RuntimeError(
+            "DB_PASSWORD is not configured. Set it in your environment."
+        )
+
     return mysql.connector.connect(
-        host="127.0.0.1",
-        port=3306,
-        user="root",
-        password="Admin",
-        database="caresync_pro",
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        user=os.getenv("DB_USER", "root"),
+        password=db_password,
+        database=os.getenv("DB_NAME", "caresync"),
         use_pure=True
     )
 
 
 # ============================================================
-# 1. SUMMARY
+# ENDPOINT 1: SUMMARY
 # ============================================================
 
 @app.get("/summary")
@@ -52,87 +59,80 @@ def get_summary():
     cursor = db.cursor(dictionary=True)
 
     try:
+
+        # Patients
         cursor.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM patient
-            WHERE is_deleted = 0
-            """
+            "SELECT COUNT(*) AS total "
+            "FROM patient "
+            "WHERE is_deleted = 0"
         )
         patients = cursor.fetchone()["total"]
 
+        # Doctors
         cursor.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM doctor
-            WHERE is_active = 1
-            """
+            "SELECT COUNT(*) AS total "
+            "FROM doctor "
+            "WHERE is_active = 1"
         )
         doctors = cursor.fetchone()["total"]
 
+        # Appointments
         cursor.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM appointment
-            """
+            "SELECT COUNT(*) AS total "
+            "FROM appointment"
         )
         appointments = cursor.fetchone()["total"]
 
+        # Bills
         cursor.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM billing
-            """
+            "SELECT COUNT(*) AS total "
+            "FROM billing"
         )
         bills = cursor.fetchone()["total"]
 
+        # Rejected bills
         cursor.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM billing
-            WHERE status = 'Rejected'
-            """
+            "SELECT COUNT(*) AS total "
+            "FROM billing "
+            "WHERE status = 'Rejected'"
         )
         rejected = cursor.fetchone()["total"]
 
+        # Rejection rate
         rejection_rate = (
             round((rejected / bills) * 100, 1)
             if bills > 0
             else 0
         )
 
+        # Revenue
         cursor.execute(
-            """
-            SELECT ROUND(SUM(amount_paid), 2) AS total
-            FROM billing
-            """
+            "SELECT ROUND(SUM(amount_paid), 2) AS total "
+            "FROM billing"
         )
         revenue = cursor.fetchone()["total"] or 0
 
+        # Prescriptions
         cursor.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM prescription
-            WHERE is_deleted = 0
-            """
+            "SELECT COUNT(*) AS total "
+            "FROM prescription "
+            "WHERE is_deleted = 0"
         )
         prescriptions = cursor.fetchone()["total"]
 
+        # Notifications
         cursor.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM notification
-            WHERE is_read = 0
-            """
+            "SELECT COUNT(*) AS total "
+            "FROM notification "
+            "WHERE is_read = 0"
         )
         unread_notifications = cursor.fetchone()["total"]
 
+        # Reports
         cursor.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM report
-            WHERE is_deleted = 0
-            """
+            "SELECT COUNT(*) AS total "
+            "FROM report "
+            "WHERE is_deleted = 0"
         )
         reports = cursor.fetchone()["total"]
 
@@ -154,42 +154,61 @@ def get_summary():
 
 
 # ============================================================
-# 2. PATIENT LIST
+# ENDPOINT 2: PATIENTS
 # ============================================================
 
 @app.get("/patients")
-def get_patients():
+def get_patients(search: str = ""):
+    """
+    Return up to 50 patients (newest first).
+
+    Optional ?search=<text> matches part of the patient's name
+    across ALL patients, not just the 50 newest.
+    """
+
+    term = (search or "").strip()[:100]
+
+    where = "is_deleted = 0"
+    params = ()
+
+    if term:
+        # '|' is the LIKE escape character, so a typed % or _
+        # is matched literally instead of acting as a wildcard.
+        escaped = (
+            term.replace("|", "||")
+                .replace("%", "|%")
+                .replace("_", "|_")
+        )
+        where += " AND full_name LIKE %s ESCAPE '|'"
+        params = (f"%{escaped}%",)
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
     try:
+
         cursor.execute(
-            """
+            f"""
             SELECT
                 patient_id,
                 full_name,
                 gender,
                 blood_group,
-                DATE_FORMAT(
-                    date_of_birth,
-                    '%d %b %Y'
-                ) AS date_of_birth,
-                DATE_FORMAT(
-                    created_at,
-                    '%d %b %Y'
-                ) AS registered_on
+                DATE_FORMAT(date_of_birth, '%d %b %Y') AS date_of_birth,
+                DATE_FORMAT(created_at, '%d %b %Y') AS registered_on
             FROM patient
-            WHERE is_deleted = 0
+            WHERE {where}
             ORDER BY created_at DESC
             LIMIT 50
-            """
+            """,
+            params,
         )
 
         patients = cursor.fetchall()
 
         return {
-            "patients": patients
+            "patients": patients,
+            "search": term,
         }
 
     finally:
@@ -198,47 +217,7 @@ def get_patients():
 
 
 # ============================================================
-# 3. PATIENT LOOKUP BY ID
-# ============================================================
-
-@app.get("/patients/{patient_id}")
-def get_patient(patient_id: int):
-
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-
-    try:
-        cursor.execute(
-            """
-            SELECT
-                patient_id,
-                full_name,
-                blood_group,
-                email
-            FROM patient
-            WHERE patient_id = %s
-              AND is_deleted = 0
-            """,
-            (patient_id,)
-        )
-
-        patient = cursor.fetchone()
-
-        if patient is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Patient not found"
-            )
-
-        return patient
-
-    finally:
-        cursor.close()
-        db.close()
-
-
-# ============================================================
-# 4. BILLING
+# ENDPOINT 3: BILLING
 # ============================================================
 
 @app.get("/billing")
@@ -248,6 +227,7 @@ def get_billing():
     cursor = db.cursor(dictionary=True)
 
     try:
+
         cursor.execute(
             """
             SELECT
@@ -256,10 +236,7 @@ def get_billing():
                 b.total_amount,
                 b.amount_paid,
                 b.status,
-                DATE_FORMAT(
-                    b.bill_date,
-                    '%d %b %Y'
-                ) AS bill_date
+                DATE_FORMAT(b.bill_date, '%d %b %Y') AS bill_date
             FROM billing b
             JOIN patient p
                 ON p.patient_id = b.patient_id
@@ -292,7 +269,7 @@ def get_billing():
 
 
 # ============================================================
-# 5. DOCTORS
+# ENDPOINT 4: DOCTORS
 # ============================================================
 
 @app.get("/doctors")
@@ -302,6 +279,7 @@ def get_doctors():
     cursor = db.cursor(dictionary=True)
 
     try:
+
         cursor.execute(
             """
             SELECT
@@ -310,14 +288,18 @@ def get_doctors():
                 d.specialisation,
                 COUNT(a.appointment_id) AS total_appointments
             FROM doctor d
+
             LEFT JOIN appointment a
                 ON a.doctor_id = d.doctor_id
                 AND a.status = 'Completed'
+
             WHERE d.is_active = 1
+
             GROUP BY
                 d.doctor_id,
                 d.full_name,
                 d.specialisation
+
             ORDER BY total_appointments DESC
             """
         )
@@ -334,44 +316,7 @@ def get_doctors():
 
 
 # ============================================================
-# 6. DOCTOR ANALYTICS
-# ============================================================
-
-@app.get("/analytics/doctors")
-def get_doctor_analytics():
-
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-
-    try:
-        cursor.execute(
-            """
-            SELECT
-                d.full_name AS doctor_name,
-                COUNT(a.appointment_id) AS total_appointments
-            FROM doctor d
-            LEFT JOIN appointment a
-                ON a.doctor_id = d.doctor_id
-                AND a.status = 'Completed'
-            WHERE d.is_active = 1
-            GROUP BY
-                d.doctor_id,
-                d.full_name
-            ORDER BY total_appointments DESC
-            """
-        )
-
-        analytics = cursor.fetchall()
-
-        return analytics
-
-    finally:
-        cursor.close()
-        db.close()
-
-
-# ============================================================
-# 7. PRESCRIPTIONS
+# ENDPOINT 5: PRESCRIPTIONS
 # ============================================================
 
 @app.get("/prescriptions")
@@ -381,6 +326,7 @@ def get_prescriptions():
     cursor = db.cursor(dictionary=True)
 
     try:
+
         cursor.execute(
             """
             SELECT
@@ -395,13 +341,19 @@ def get_prescriptions():
                     pr.created_at,
                     '%d %b %Y'
                 ) AS prescribed_on
+
             FROM prescription pr
+
             JOIN patient p
                 ON p.patient_id = pr.patient_id
+
             JOIN doctor d
                 ON d.doctor_id = pr.doctor_id
+
             WHERE pr.is_deleted = 0
+
             ORDER BY pr.created_at DESC
+
             LIMIT 50
             """
         )
@@ -418,7 +370,7 @@ def get_prescriptions():
 
 
 # ============================================================
-# 8. NOTIFICATIONS
+# ENDPOINT 6: NOTIFICATIONS
 # ============================================================
 
 @app.get("/notifications")
@@ -428,6 +380,7 @@ def get_notifications():
     cursor = db.cursor(dictionary=True)
 
     try:
+
         cursor.execute(
             """
             SELECT
@@ -441,10 +394,13 @@ def get_notifications():
                     created_at,
                     '%d %b %Y %H:%i'
                 ) AS created_on
+
             FROM notification
+
             ORDER BY
                 is_read ASC,
                 created_at DESC
+
             LIMIT 50
             """
         )
@@ -461,7 +417,7 @@ def get_notifications():
 
 
 # ============================================================
-# 9. REPORTS
+# ENDPOINT 7: REPORTS
 # ============================================================
 
 @app.get("/reports")
@@ -471,6 +427,7 @@ def get_reports():
     cursor = db.cursor(dictionary=True)
 
     try:
+
         cursor.execute(
             """
             SELECT
@@ -483,13 +440,19 @@ def get_reports():
                     r.created_at,
                     '%d %b %Y'
                 ) AS generated_on
+
             FROM report r
+
             JOIN patient p
                 ON p.patient_id = r.patient_id
+
             LEFT JOIN doctor d
                 ON d.doctor_id = r.generated_by
+
             WHERE r.is_deleted = 0
+
             ORDER BY r.created_at DESC
+
             LIMIT 50
             """
         )
@@ -506,7 +469,7 @@ def get_reports():
 
 
 # ============================================================
-# 10. ACTIVITY LOG
+# ENDPOINT 8: ACTIVITY LOG
 # ============================================================
 
 @app.get("/activity-log")
@@ -516,6 +479,7 @@ def get_activity_log():
     cursor = db.cursor(dictionary=True)
 
     try:
+
         cursor.execute(
             """
             SELECT
@@ -530,8 +494,11 @@ def get_activity_log():
                     logged_at,
                     '%d %b %Y %H:%i'
                 ) AS logged_on
+
             FROM activity_log
+
             ORDER BY logged_at DESC
+
             LIMIT 100
             """
         )
@@ -548,11 +515,98 @@ def get_activity_log():
 
 
 # ============================================================
-# ROOT
+# ENDPOINT 9: DOCTOR ANALYTICS
+# ============================================================
+
+@app.get("/analytics/doctors")
+def get_doctor_analytics():
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        cursor.execute(
+            """
+            SELECT
+                d.doctor_id,
+                d.full_name,
+                d.specialisation,
+
+                COUNT(
+                    CASE
+                        WHEN a.status = 'Completed'
+                        THEN a.appointment_id
+                    END
+                ) AS completed_appointments,
+
+                COUNT(
+                    CASE
+                        WHEN a.status = 'Scheduled'
+                        THEN a.appointment_id
+                    END
+                ) AS scheduled_appointments,
+
+                COUNT(
+                    CASE
+                        WHEN a.status = 'Cancelled'
+                        THEN a.appointment_id
+                    END
+                ) AS cancelled_appointments,
+
+                COUNT(a.appointment_id)
+                    AS total_appointments
+
+            FROM doctor d
+
+            LEFT JOIN appointment a
+                ON a.doctor_id = d.doctor_id
+
+            WHERE d.is_active = 1
+
+            GROUP BY
+                d.doctor_id,
+                d.full_name,
+                d.specialisation
+
+            ORDER BY total_appointments DESC
+            """
+        )
+
+        analytics = cursor.fetchall()
+
+        return {
+            "doctors": analytics
+        }
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+# ============================================================
+# ENDPOINT 10: DOCTOR SUMMARY (used by dashboard.html chart)
+# Same real data as /analytics/doctors, under the key the
+# frontend reads (doctor_summary).
+# ============================================================
+
+@app.get("/doctor-summary")
+def get_doctor_summary():
+
+    return {
+        "doctor_summary": get_doctor_analytics()["doctors"]
+    }
+
+
+# ============================================================
+# ROOT / HEALTH CHECK
 # ============================================================
 
 @app.get("/")
 def root():
+
     return {
-        "message": "CareSync Pro Dashboard API is running"
+        "success": True,
+        "message": "CareSync Pro Dashboard API is running",
+        "database": "caresync"
     }

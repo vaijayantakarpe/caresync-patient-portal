@@ -1,0 +1,18 @@
+========================================
+       HOSPITAL DISCHARGE SUMMARY
+========================================
+
+Patient ID       : 491
+Patient Name     : Tamanna Loke
+Date of Birth    : 2002-07-11
+Gender           : Male
+Blood Group      : A+
+Phone            : 9199250203
+Email            : patient491@example.com
+
+Status           : DISCHARGED
+Discharge Time   : 2026-10-01 15:10:18
+
+----------------------------------------
+Patient has been discharged successfully.
+----------------------------------------

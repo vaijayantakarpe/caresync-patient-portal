@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>CareSync Login</title>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(
+                135deg,
+                #eef7ff,
+                #f8fbff
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1f2937;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1050px;
+            min-height: 620px;
+            margin: 20px;
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .left {
+            padding: 60px;
+            background: linear-gradient(
+                145deg,
+                #1f3864,
+                #1f3864
+            );
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .logo {
+            width: 62px;
+            height: 62px;
+            border-radius: 16px;
+            background: white;
+            color: #1f3864;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: bold;
+            margin-bottom: 28px;
+        }
+
+        .left h1 {
+            margin: 0 0 18px;
+            font-size: 42px;
+            line-height: 1.1;
+        }
+
+        .left p {
+            margin: 0;
+            font-size: 17px;
+            line-height: 1.7;
+            opacity: 0.92;
+        }
+
+        .features {
+            margin-top: 35px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 15px 0;
+            font-size: 15px;
+        }
+
+        .check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .right {
+            padding: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 390px;
+        }
+
+        .login-box h2 {
+            margin: 0 0 10px;
+            font-size: 30px;
+            color: #111827;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: #0b74de;
+            box-shadow: 0 0 0 3px rgba(11,116,222,0.1);
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 80px;
+        }
+
+        .show-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #0b74de;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: #1f3864;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-button:hover {
+            background:#1f3864;
+        }
+
+        .login-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .error-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .success-box {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #047857;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .demo-box {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f3f7fc;
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        .demo-box strong {
+            color: #111827;
+        }
+
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 800px) {
+
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .left {
+                padding: 40px;
+            }
+
+            .left h1 {
+                font-size: 34px;
+            }
+
+            .right {
+                padding: 40px 25px;
+            }
+
+            .features {
+                display: none;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div id="app">
+
+    <div class="container">
+
+        <!-- LEFT SIDE -->
+
+        <div class="left">
+
+            <div class="logo">
+                C
+            </div>
+
+            <h1>
+                CareSync
+            </h1>
+
+            <p>
+                Smart and secure healthcare management
+                for patients, doctors and hospital staff.
+            </p>
+
+            <div class="features">
+
+                <div class="feature">
+                    <span class="check">✓</span>
+                    Secure patient management
+                </div>
+
+                <div class="feature">
+                    <span class="check">✓</span>
+                    Easy appointment booking
+                </div>
+
+                <div class="feature">
+                    <span class="check">✓</span>
+                    Healthcare information in one place
+                </div>
+
+                <div class="feature">
+                    <span class="check">✓</span>
+                    Secure authentication
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+
+        <div class="right">
+
+            <div class="login-box">
+
+                <h2>
+                    Welcome Back
+                </h2>
+
+                <div class="subtitle">
+                    Sign in to continue to your CareSync portal.
+                </div>
+
+
+                <!-- ERROR -->
+
+                <div
+                    v-if="errorMessage"
+                    class="error-box"
+                >
+                    {{ errorMessage }}
+                </div>
+
+
+                <!-- SUCCESS -->
+
+                <div
+                    v-if="successMessage"
+                    class="success-box"
+                >
+                    {{ successMessage }}
+                </div>
+
+
+                <!-- LOGIN FORM -->
+
+                <form
+                    @submit.prevent="login"
+                    autocomplete="on"
+                >
+
+                    <div class="form-group">
+
+                        <label for="email">
+                            Email Address
+                        </label>
+
+                        <input
+                            id="email"
+                            type="email"
+                            v-model.trim="loginForm.email"
+                            placeholder="Enter your email"
+                            autocomplete="username"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="password">
+                            Password
+                        </label>
+
+                        <div class="password-wrapper">
+
+                            <input
+                                id="password"
+                                :type="showPassword ? 'text' : 'password'"
+                                v-model="loginForm.password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="show-password"
+                                @click="showPassword = !showPassword"
+                            >
+                                {{ showPassword ? 'Hide' : 'Show' }}
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="login-button"
+                        :disabled="loading"
+                    >
+
+                        <span
+                            v-if="loading"
+                            class="loading"
+                        >
+                            <span class="spinner"></span>
+                            Logging in...
+                        </span>
+
+                        <span v-else>
+                            Login
+                        </span>
+
+                    </button>
+
+                </form>
+
+
+                <!-- DEMO LOGIN -->
+
+                <div class="demo-box">
+
+                    <strong>Patient Demo Login</strong>
+
+                    <br><br>
+
+                    Email:
+                    <strong>patient@caresync.com</strong>
+
+                    <br>
+
+                    Password:
+                    <strong>Patient@123</strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const { createApp } = Vue;
+
+
+createApp({
+
+    data() {
+
+        return {
+
+            // ------------------------------------------------
+            // API
+            // ------------------------------------------------
+
+            API_URL: "http://127.0.0.1:8002",
+
+
+            // ------------------------------------------------
+            // LOGIN FORM
+            // ------------------------------------------------
+
+            loginForm: {
+
+                email: "",
+
+                password: ""
+
+            },
+
+
+            // ------------------------------------------------
+            // UI STATE
+            // ------------------------------------------------
+
+            loading: false,
+
+            showPassword: false,
+
+            errorMessage: "",
+
+            successMessage: ""
+
+        };
+
+    },
+
+
+    mounted() {
+
+        // ----------------------------------------------------
+        // IMPORTANT:
+        // Remove old/stale login state when opening portal.
+        // ----------------------------------------------------
+
+        this.clearOldSession();
+
+    },
+
+
+    methods: {
+
+
+        // ====================================================
+        // CLEAR OLD SESSION
+        // ====================================================
+
+        clearOldSession() {
+
+            localStorage.removeItem("access_token");
+
+            localStorage.removeItem("refresh_token");
+
+            localStorage.removeItem("careSyncUser");
+
+            sessionStorage.removeItem("access_token");
+
+            sessionStorage.removeItem("refresh_token");
+
+            sessionStorage.removeItem("careSyncUser");
+
+        },
+
+
+        // ====================================================
+        // LOGIN
+        // ====================================================
+
+        async login() {
+
+            this.errorMessage = "";
+
+            this.successMessage = "";
+
+            this.loading = true;
+
+
+            try {
+
+                // --------------------------------------------
+                // Validate input
+                // --------------------------------------------
+
+                const email = this.loginForm.email.trim();
+
+                const password = this.loginForm.password;
+
+
+                if (!email || !password) {
+
+                    throw new Error(
+                        "Please enter your email and password."
+                    );
+
+                }
+
+
+                console.log(
+                    "Sending login request for:",
+                    email
+                );
+
+
+                // --------------------------------------------
+                // Send login request
+                // --------------------------------------------
+
+                const response = await fetch(
+                    `${this.API_URL}/login`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            email: email,
+
+                            password: password
+
+                        })
+                    }
+                );
+
+
+                // --------------------------------------------
+                // Read response
+                // --------------------------------------------
+
+                let result;
+
+                try {
+
+                    result = await response.json();
+
+                } catch (jsonError) {
+
+                    throw new Error(
+                        "The authentication server returned an invalid response."
+                    );
+
+                }
+
+
+                console.log(
+                    "Login response:",
+                    result
+                );
+
+
+                // --------------------------------------------
+                // Backend error
+                // --------------------------------------------
+
+                if (!response.ok) {
+
+                    let message =
+                        "Invalid email or password.";
+
+                    if (result && result.detail) {
+
+                        if (typeof result.detail === "string") {
+
+                            message = result.detail;
+
+                        } else {
+
+                            message =
+                                JSON.stringify(result.detail);
+
+                        }
+
+                    }
+
+                    throw new Error(message);
+
+                }
+
+
+                // --------------------------------------------
+                // Verify successful response
+                // --------------------------------------------
+
+                if (
+                    !result ||
+                    !result.access_token ||
+                    !result.user
+                ) {
+
+                    throw new Error(
+                        "Login response is incomplete."
+                    );
+
+                }
+
+
+                // --------------------------------------------
+                // Save authentication
+                // --------------------------------------------
+
+                localStorage.setItem(
+                    "access_token",
+                    result.access_token
+                );
+
+                localStorage.setItem(
+                    "refresh_token",
+                    result.refresh_token || ""
+                );
+
+                localStorage.setItem(
+                    "careSyncUser",
+                    JSON.stringify(result.user)
+                );
+
+
+                // --------------------------------------------
+                // Success message
+                // --------------------------------------------
+
+                this.successMessage =
+                    "Login successful. Opening CareSync dashboard...";
+
+
+                console.log(
+                    "Logged in user:",
+                    result.user
+                );
+
+
+                // --------------------------------------------
+                // Role-based redirect
+                // --------------------------------------------
+
+                setTimeout(() => {
+
+                    this.redirectUser(
+                        result.user
+                    );
+
+                }, 500);
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Login error:",
+                    error
+                );
+
+
+                if (
+                    error instanceof TypeError &&
+                    error.message.includes("fetch")
+                ) {
+
+                    this.errorMessage =
+                        "Cannot connect to CareSync server. Please make sure the authentication API is running on port 8002.";
+
+                } else {
+
+                    this.errorMessage =
+                        error.message ||
+                        "Login failed. Please try again.";
+
+                }
+
+            }
+
+
+            finally {
+
+                this.loading = false;
+
+            }
+
+        },
+
+
+        // ====================================================
+        // REDIRECT USER
+        // ====================================================
+
+        redirectUser(user) {
+
+            if (!user || !user.role) {
+
+                this.errorMessage =
+                    "Login succeeded, but user role was not received.";
+
+                return;
+
+            }
+
+
+            const role =
+                user.role.toLowerCase();
+
+
+            console.log(
+                "Redirecting user with role:",
+                role
+            );
+
+
+            // ------------------------------------------------
+            // PATIENT
+            // ------------------------------------------------
+
+            if (role === "patient") {
+
+                window.location.href =
+    "../dashboard/dashboard.html";
+
+                return;
+
+            }
+
+
+            // ------------------------------------------------
+            // DOCTOR
+            // ------------------------------------------------
+
+            if (role === "doctor") {
+
+                window.location.href =
+                    "../dashboard/dashboard.html";
+
+                return;
+
+            }
+
+
+            // ------------------------------------------------
+            // BILLING
+            // ------------------------------------------------
+
+            if (role === "billing") {
+
+                window.location.href =
+                    "../dashboard/dashboard.html";
+
+                return;
+
+            }
+
+
+            // ------------------------------------------------
+            // UNKNOWN ROLE
+            // ------------------------------------------------
+
+            this.errorMessage =
+                "Unknown user role: " + user.role;
+
+        }
+
+    }
+
+}).mount("#app");
+
+</script>
+
+</body>
+
+</html>

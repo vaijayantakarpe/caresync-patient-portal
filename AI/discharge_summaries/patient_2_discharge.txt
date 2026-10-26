@@ -1,0 +1,22 @@
+========================================
+       HOSPITAL DISCHARGE SUMMARY
+========================================
+
+Patient ID       : 2
+Patient Name     : Gabriel Sidhu
+Date of Birth    : 2011-08-17
+Gender           : Female
+Blood Group      : B+
+Phone            : 9830723088
+Email            : patient2@example.com
+
+Ward             : General
+Bed Number       : B003
+Nurse            : Nurse Asha
+
+Status           : DISCHARGED
+Discharge Time   : 2026-10-01 22:42:58
+
+----------------------------------------
+Patient has been discharged successfully.
+----------------------------------------
